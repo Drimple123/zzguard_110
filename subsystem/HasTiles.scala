@@ -230,6 +230,33 @@ trait DefaultTileContextType
   with HasTileInputConstants
 { this: BaseSubsystem =>
   val debugNode: IntSyncOutwardNode
+
+
+  val data_bits_mid = Seq.fill(11)(BundleBridgeIdentityNode[UInt]())
+  val data_valid_mid = Seq.fill(11)(BundleBridgeIdentityNode[Bool]())
+  val data_ready_mid = Seq.fill(11)(BundleBridgeIdentityNode[Bool]())
+
+  val data_bits_mid_2 = Seq.fill(3)(BundleBridgeIdentityNode[UInt]())
+  val data_valid_mid_2 = Seq.fill(3)(BundleBridgeIdentityNode[Bool]())
+  val data_ready_mid_2 = Seq.fill(3)(BundleBridgeIdentityNode[Bool]())
+
+  val data_bits_mid_3 = Seq.fill(3)(BundleBridgeIdentityNode[UInt]())
+  val data_valid_mid_3 = Seq.fill(3)(BundleBridgeIdentityNode[Bool]())
+  val data_ready_mid_3 = Seq.fill(3)(BundleBridgeIdentityNode[Bool]())
+
+  val rocc_valid_mid = BundleBridgeIdentityNode[Bool]()
+  val rocc_bits_mid = BundleBridgeIdentityNode[UInt]()
+  val rocc_ready_mid = BundleBridgeIdentityNode[Bool]()
+
+  val rocc_valid_mid_2 = BundleBridgeIdentityNode[Bool]()
+  val rocc_bits_mid_2 = BundleBridgeIdentityNode[UInt]()
+  val rocc_ready_mid_2 = BundleBridgeIdentityNode[Bool]()
+
+  val rocc_valid_mid_3 = BundleBridgeIdentityNode[Bool]()
+  val rocc_bits_mid_3 = BundleBridgeIdentityNode[UInt]()
+  val rocc_ready_mid_3 = BundleBridgeIdentityNode[Bool]()
+
+
 } // TODO: ideally this bound would be softened to LazyModule
 
 /** Standardized interface by which parameterized tiles can be attached to contexts containing interconnect resources.
@@ -261,7 +288,89 @@ trait CanAttachTile {
     connectPRC(domain, context)
     connectOutputNotifications(domain, context)
     connectInputConstants(domain, context)
+
+    connect_zz(domain,context)
   }
+
+  def connect_zz(domain: TilePRCIDomain[TileType], context: TileContextType): Unit = {
+    implicit val p = context.p
+    //zzguard todo
+    if(domain.tile.hartId == 0){
+      for(i<-0 to 10){
+        context.data_bits_mid(i) := domain.tile.data_bits_out_nodes.get(i)
+        context.data_valid_mid(i) := domain.tile.data_valid_out_nodes.get(i)
+        domain.tile.data_ready_in_nodes.get(i) := context.data_ready_mid(i)
+      }
+
+      for(i<-0 to 2){
+        context.data_bits_mid_2(i) := domain.tile.data_bits_out_nodes_2.get(i)
+        context.data_valid_mid_2(i) := domain.tile.data_valid_out_nodes_2.get(i)
+        domain.tile.data_ready_in_nodes_2.get(i) := context.data_ready_mid_2(i)
+      }
+
+      for(i<-0 to 2){
+        context.data_bits_mid_3(i) := domain.tile.data_bits_out_nodes_3.get(i)
+        context.data_valid_mid_3(i) := domain.tile.data_valid_out_nodes_3.get(i)
+        domain.tile.data_ready_in_nodes_3.get(i) := context.data_ready_mid_3(i)
+      }
+
+      context.rocc_bits_mid := domain.tile.rocc_bits_out.get
+      context.rocc_valid_mid := domain.tile.rocc_valid_out.get
+      domain.tile.rocc_ready_in.get := context.rocc_ready_mid
+
+      context.rocc_bits_mid_2 := domain.tile.rocc_bits_out_2.get
+      context.rocc_valid_mid_2 := domain.tile.rocc_valid_out_2.get
+      domain.tile.rocc_ready_in_2.get := context.rocc_ready_mid_2
+
+      context.rocc_bits_mid_3 := domain.tile.rocc_bits_out_3.get
+      context.rocc_valid_mid_3 := domain.tile.rocc_valid_out_3.get
+      domain.tile.rocc_ready_in_3.get := context.rocc_ready_mid_3
+
+
+
+    }
+    else if(domain.tile.hartId == 1){
+  
+      for(i<-0 to 10){
+        domain.tile.data_bits_in_nodes.get(i) := context.data_bits_mid(i)
+        domain.tile.data_valid_in_nodes.get(i) := context.data_valid_mid(i)
+        context.data_ready_mid(i) := domain.tile.data_ready_out_nodes.get(i)
+      }
+
+
+      domain.tile.rocc_bits_in.get := context.rocc_bits_mid
+      domain.tile.rocc_valid_in.get := context.rocc_valid_mid
+      context.rocc_ready_mid := domain.tile.rocc_ready_out.get
+      
+      
+    }
+
+    else if(domain.tile.hartId == 2){
+      for(i<-0 to 2){
+        domain.tile.data_bits_in_nodes_2.get(i) := context.data_bits_mid_2(i)
+        domain.tile.data_valid_in_nodes_2.get(i) := context.data_valid_mid_2(i)
+        context.data_ready_mid_2(i) := domain.tile.data_ready_out_nodes_2.get(i)
+      }
+      
+      domain.tile.rocc_bits_in_2.get := context.rocc_bits_mid_2
+      domain.tile.rocc_valid_in_2.get := context.rocc_valid_mid_2
+      context.rocc_ready_mid_2 := domain.tile.rocc_ready_out_2.get
+    }
+
+    else if(domain.tile.hartId == 3){
+      for(i<-0 to 2){
+        domain.tile.data_bits_in_nodes_3.get(i) := context.data_bits_mid_3(i)
+        domain.tile.data_valid_in_nodes_3.get(i) := context.data_valid_mid_3(i)
+        context.data_ready_mid_3(i) := domain.tile.data_ready_out_nodes_3.get(i)
+      }
+      
+      domain.tile.rocc_bits_in_3.get := context.rocc_bits_mid_3
+      domain.tile.rocc_valid_in_3.get := context.rocc_valid_mid_3
+      context.rocc_ready_mid_3 := domain.tile.rocc_ready_out_3.get
+    }
+    
+  }
+
 
   /** Connect the port where the tile is the master to a TileLink interconnect. */
   def connectMasterPorts(domain: TilePRCIDomain[TileType], context: Attachable): Unit = {

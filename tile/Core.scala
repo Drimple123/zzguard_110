@@ -175,5 +175,16 @@ trait HasCoreIO extends HasTileParameters {
     val cease = Bool().asOutput
     val wfi = Bool().asOutput
     val traceStall = Bool().asInput
+
+    //zzguard
+    val valid = if(tileParams.hartId == 0) Some(Output(Bool())) else None
+    val pc = if(tileParams.hartId == 0) Some(Output(UInt(40.W))) else None
+    val ins = if(tileParams.hartId == 0) Some(Output(UInt(32.W))) else None
+    val wdata = if(tileParams.hartId == 0) Some(Output(UInt(64.W))) else None
+    val mdata = if(tileParams.hartId == 0) Some(Output(UInt(64.W))) else None
+    val mem_npc = if(tileParams.hartId == 0) Some(Output(UInt(40.W))) else None
+    val req_addr = if(tileParams.hartId == 0) Some(Output(UInt(40.W))) else None
+
+    val ready_stall = if(tileParams.hartId == 0) Some(Input(Bool())) else None
   }
 }

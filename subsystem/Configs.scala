@@ -11,6 +11,93 @@ import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.rocket._
 import freechips.rocketchip.tile._
 import freechips.rocketchip.util._
+import freechips.rocketchip.zzguardrr._
+
+
+class WithzzguardRoCC extends Config((site, here, up) => {
+  case BuildRoCC => {
+    val existingRoCCs = up(BuildRoCC, site)
+    val tiles = up(TilesLocated(InSubsystem), site)
+    site(TileKey) match {
+      case tile: RocketTileParams =>
+        val tileId = tile.hartId
+        //println(s"********zzguard: current tile id = $tileId")
+
+        existingRoCCs ++ {
+          if (tileId == 0) {  // 修改这里以符合你的判断条件
+            List((p: Parameters) => {
+              val zzguard = LazyModule(new zzguardrr_ram_new(OpcodeSet.custom0)(p))
+              zzguard
+            })
+          }
+          // else if(tileId == 1) {
+          //   List(
+          //     (p: Parameters) => {
+          //     val asan_0 = LazyModule(new asan_rocc(OpcodeSet.custom0)(p))
+          //     asan_0
+          //     },
+          //     (p: Parameters) => {
+          //     val asan_1 = LazyModule(new asan_rocc(OpcodeSet.custom1)(p))
+          //     asan_1
+          //     },
+          //     (p: Parameters) => {
+          //     val asan_2 = LazyModule(new asan_rocc(OpcodeSet.custom2)(p))
+          //     asan_2
+          //     },
+          //     (p: Parameters) => {
+          //     val asan_3 = LazyModule(new asan_rocc(OpcodeSet.custom3)(p))
+          //     asan_3
+          //     }
+
+
+          //   )
+          // }
+          // else if(tileId == 2) {
+          //   List(
+          //     (p: Parameters) => {
+          //     val asan_0 = LazyModule(new asan_rocc(OpcodeSet.custom0)(p))
+          //     asan_0
+          //     },
+          //     (p: Parameters) => {
+          //     val asan_1 = LazyModule(new asan_rocc(OpcodeSet.custom1)(p))
+          //     asan_1
+          //     },
+          //     (p: Parameters) => {
+          //     val asan_2 = LazyModule(new asan_rocc(OpcodeSet.custom2)(p))
+          //     asan_2
+          //     }
+
+
+          //   )
+          // }
+          // else if(tileId == 3) {
+          //   List(
+          //     (p: Parameters) => {
+          //     val asan_0 = LazyModule(new asan_rocc(OpcodeSet.custom0)(p))
+          //     asan_0
+          //     },
+          //     (p: Parameters) => {
+          //     val asan_1 = LazyModule(new asan_rocc(OpcodeSet.custom1)(p))
+          //     asan_1
+          //     },
+          //     (p: Parameters) => {
+          //     val asan_2 = LazyModule(new asan_rocc(OpcodeSet.custom2)(p))
+          //     asan_2
+          //     }
+
+
+          //   )
+          // }
+          else {
+            List()
+          }
+        }
+      case _ =>
+        existingRoCCs
+    }
+  }
+})
+
 
 class BaseSubsystemConfig extends Config ((site, here, up) => {
   // Tile parameters
@@ -102,7 +189,7 @@ class WithNBigCores(
         divEarlyOut = true))),
       dcache = Some(DCacheParams(
         rowBits = site(SystemBusKey).beatBits,
-        nMSHRs = 0,
+        nMSHRs = 16,
         blockBytes = site(CacheBlockBytes))),
       icache = Some(ICacheParams(
         rowBits = site(SystemBusKey).beatBits,
