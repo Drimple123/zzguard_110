@@ -52,6 +52,23 @@ class RoCCIO(val nPTWPorts: Int, nRoCCCSRs: Int)(implicit p: Parameters) extends
   val ptw = Vec(nPTWPorts, new TLBPTWIO)
   val fpu_req = Decoupled(new FPInput)
   val fpu_resp = Flipped(Decoupled(new FPResult))
+
+  val din = if(tileParams.hartId == 1 || tileParams.hartId == 2 || tileParams.hartId == 3) Some(Flipped(Decoupled(UInt(160.W)))) else None
+  val rocc_in = if(tileParams.hartId == 1 || tileParams.hartId == 2 || tileParams.hartId == 3) Some(Flipped(Decoupled(UInt(55.W)))) else None
+
+  //zzguard
+  val valid = if(tileParams.hartId == 0) Some(Input(Bool())) else None
+  val pc = if(tileParams.hartId == 0) Some(Input(UInt(40.W))) else None
+  val ins = if(tileParams.hartId == 0) Some(Input(UInt(32.W))) else None
+  val wdata = if(tileParams.hartId == 0) Some(Input(UInt(64.W))) else None
+  val mdata = if(tileParams.hartId == 0) Some(Input(UInt(64.W))) else None
+  val mem_npc = if(tileParams.hartId == 0) Some(Input(UInt(40.W))) else None
+  val req_addr = if(tileParams.hartId == 0) Some(Input(UInt(40.W))) else None
+
+  val asan_io = if(tileParams.hartId == 0) Some(Vec(3,Decoupled(UInt(55.W)))) else None
+
+  val fifo_full = if(tileParams.hartId == 0) Some(Output(Bool())) else None
+  val fifo_io = if(tileParams.hartId == 0) Some(Vec(17, Decoupled(UInt(160.W)))) else None
 }
 
 /** Base classes for Diplomatic TL2 RoCC units **/

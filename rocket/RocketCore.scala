@@ -893,19 +893,41 @@ class Rocket(tile: RocketTile)(implicit p: Parameters) extends CoreModule()(p)
   val rocc_blocked = Reg(Bool())
   rocc_blocked := !wb_xcpt && !io.rocc.cmd.ready && (io.rocc.cmd.valid || rocc_blocked)
 
-  val ctrl_stalld =
-    id_ex_hazard || id_mem_hazard || id_wb_hazard || id_sboard_hazard ||
-    csr.io.singleStep && (ex_reg_valid || mem_reg_valid || wb_reg_valid) ||
-    id_csr_en && csr.io.decode(0).fp_csr && !io.fpu.fcsr_rdy ||
-    id_ctrl.fp && id_stall_fpu ||
-    id_ctrl.mem && dcache_blocked || // reduce activity during D$ misses
-    id_ctrl.rocc && rocc_blocked || // reduce activity while RoCC is busy
-    id_ctrl.div && (!(div.io.req.ready || (div.io.resp.valid && !wb_wxd)) || div.io.req.valid) || // reduce odds of replay
-    !clock_en ||
-    id_do_fence ||
-    csr.io.csr_stall ||
-    id_reg_pause ||
-    io.traceStall || io.ready_stall.get
+  val ctrl_stalld = WireDefault(false.B)
+  if(tileParams.hartId == 0){
+    ctrl_stalld :=
+      id_ex_hazard || id_mem_hazard || id_wb_hazard || id_sboard_hazard ||
+      csr.io.singleStep && (ex_reg_valid || mem_reg_valid || wb_reg_valid) ||
+      id_csr_en && csr.io.decode(0).fp_csr && !io.fpu.fcsr_rdy ||
+      id_ctrl.fp && id_stall_fpu ||
+      id_ctrl.mem && dcache_blocked || // reduce activity during D$ misses
+      id_ctrl.rocc && rocc_blocked || // reduce activity while RoCC is busy
+      id_ctrl.div && (!(div.io.req.ready || (div.io.resp.valid && !wb_wxd)) || div.io.req.valid) || // reduce odds of replay
+      !clock_en ||
+      id_do_fence ||
+      csr.io.csr_stall ||
+      id_reg_pause ||
+      io.traceStall || io.ready_stall.get
+  }
+  else{
+    ctrl_stalld :=
+      id_ex_hazard || id_mem_hazard || id_wb_hazard || id_sboard_hazard ||
+      csr.io.singleStep && (ex_reg_valid || mem_reg_valid || wb_reg_valid) ||
+      id_csr_en && csr.io.decode(0).fp_csr && !io.fpu.fcsr_rdy ||
+      id_ctrl.fp && id_stall_fpu ||
+      id_ctrl.mem && dcache_blocked || // reduce activity during D$ misses
+      id_ctrl.rocc && rocc_blocked || // reduce activity while RoCC is busy
+      id_ctrl.div && (!(div.io.req.ready || (div.io.resp.valid && !wb_wxd)) || div.io.req.valid) || // reduce odds of replay
+      !clock_en ||
+      id_do_fence ||
+      csr.io.csr_stall ||
+      id_reg_pause ||
+      io.traceStall 
+  }
+  
+
+  
+  
   ctrl_killd := !ibuf.io.inst(0).valid || ibuf.io.inst(0).bits.replay || take_pc_mem_wb || ctrl_stalld || csr.io.interrupt
 
   io.imem.req.valid := take_pc
